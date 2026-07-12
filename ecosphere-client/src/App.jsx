@@ -174,6 +174,74 @@ function App() {
   // Active User Configuration
   const [currentUserId, setCurrentUserId] = useState("emp4"); // Default: Jane Admin
 
+  // Authentication states
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // Authenticate token on load
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("http://localhost:5000/api/auth/me", {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "success") {
+            setIsAuthenticated(true);
+            if (data.data.role === "Admin") setCurrentUserId("emp4");
+            else if (data.data.role === "Manager") setCurrentUserId("emp2");
+            else setCurrentUserId("emp1");
+          } else {
+            localStorage.removeItem("token");
+          }
+        })
+        .catch(err => {
+          console.error("Auth check failed:", err);
+        });
+    }
+  }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const resData = await response.json();
+      if (resData.status === "success") {
+        localStorage.setItem("token", resData.data.token);
+        setIsAuthenticated(true);
+        
+        // Map user role to local mock employee
+        if (resData.data.role === "Admin") setCurrentUserId("emp4");
+        else if (resData.data.role === "Manager") setCurrentUserId("emp2");
+        else setCurrentUserId("emp1");
+      } else {
+        setLoginError(resData.message || "Invalid email or password.");
+      }
+    } catch (err) {
+      setLoginError("Unable to connect to the backend server.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+    setLoginEmail("");
+    setLoginPassword("");
+  };
+
+
   // Settings & Controls
   const [weights, setWeights] = useState({ environmental: 40, social: 30, governance: 30 });
   const [autoCarbon, setAutoCarbon] = useState(true);
@@ -1305,6 +1373,59 @@ function App() {
     return parseFloat(direct.toFixed(1));
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="login-screen-wrapper">
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", zIndex: -2, overflow: "hidden", pointerEvents: "none", backgroundColor: "#0a0a0a" }}>
+          <PixelCanvas 
+            colors={["#e879f9", "#a78bfa", "#38bdf8", "#22d3ee"]}
+            speed={0.02}
+          />
+        </div>
+        <div className="login-card">
+          <div className="login-header">
+            <h1 className="login-logo">EcoSphere</h1>
+            <p className="login-subtitle">Sustainability & ESG Management Portal</p>
+          </div>
+          <form onSubmit={handleLogin} className="login-form">
+            {loginError && <div className="login-error">{loginError}</div>}
+            <div className="form-group">
+              <label>Email Address</label>
+              <input 
+                type="email" 
+                value={loginEmail} 
+                onChange={(e) => setLoginEmail(e.target.value)} 
+                placeholder="enter your email..." 
+                required 
+              />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input 
+                type="password" 
+                value={loginPassword} 
+                onChange={(e) => setLoginPassword(e.target.value)} 
+                placeholder="••••••••" 
+                required 
+              />
+            </div>
+            <button type="submit" className="login-submit-btn" disabled={loginLoading}>
+              {loginLoading ? "Authenticating..." : "Sign In"}
+            </button>
+          </form>
+          <div className="login-helper">
+            <p>Demo Accounts (Password: <code>password123</code>):</p>
+            <ul>
+              <li><strong>Admin:</strong> <code>admin@ecosphere.com</code></li>
+              <li><strong>Manager:</strong> <code>manager@ecosphere.com</code></li>
+              <li><strong>Employee:</strong> <code>employee@ecosphere.com</code></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Background PixelCanvas Animation */}
@@ -1609,19 +1730,30 @@ function App() {
               <span className="points-indicator">{activeUser.points} pts</span>
             </div>
 
-            {/* Profile Swapper */}
-            <div className="profile-switcher">
-              <span className="profile-avatar">{activeUser.avatar}</span>
-              <select
-                value={currentUserId}
-                onChange={(e) => setCurrentUserId(e.target.value)}
+            {/* Logged In User Profile & Logout */}
+            <div className="profile-switcher" style={{ gap: "12px", padding: "6px 16px" }}>
+              <span className="profile-avatar" style={{ backgroundColor: "var(--color-environmental)" }}>{activeUser.avatar}</span>
+              <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>
+                {activeUser.name} ({activeUser.role})
+              </span>
+              <button 
+                onClick={handleLogout}
+                style={{
+                  background: "rgba(239, 68, 68, 0.15)",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  color: "#ef4444",
+                  borderRadius: "9999px",
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  marginLeft: "4px",
+                  transition: "var(--transition-fast)"
+                }}
+                className="no-print"
               >
-                {employees.map(emp => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name} ({emp.role})
-                  </option>
-                ))}
-              </select>
+                Logout
+              </button>
             </div>
 
             {/* Notification Bell */}
