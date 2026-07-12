@@ -1,16 +1,145 @@
-# React + Vite
+# EcoSphere
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+EcoSphere is a web application that promotes environmental sustainability by helping users understand, monitor, and contribute to a greener future. The platform provides an interactive and user-friendly interface to encourage eco-friendly practices and environmental awareness.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- User-friendly interface
+- Environmental data visualization
+- Sustainability awareness resources
+- Responsive design
+- Secure user authentication (if applicable)
+- Fast and optimized performance
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Frontend
+- HTML5
+- CSS3
+- JavaScript
+
+### Backend
+- Node.js / Express.js 
+
+### Database
+- PostgreSQL
+
+### Version Control
+- Git
+- GitHub
+
+---
+
+## 📂 Project Structure
+
+```
+EcoSphere/
+│
+├── public/
+├── src/
+├── assets/
+├── routes/
+├── controllers/
+├── models/
+├── package.json
+└── README.md
+```
+
+---
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Venkatreddy71/EcoSphere.git
+```
+
+Navigate into the project directory:
+
+```bash
+cd EcoSphere
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the application:
+
+```bash
+npm start
+```
+
+---
+
+## Usage
+
+1. Open the application in your browser.
+2. Register or log in.
+3. Explore environmental resources.
+4. Track sustainability activities.
+5. Contribute towards eco-friendly initiatives.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository.
+2. Create a new branch.
+
+```bash
+git checkout -b feature-name
+```
+
+3. Commit your changes.
+
+```bash
+git commit -m "Add new feature"
+```
+
+4. Push your branch.
+
+```bash
+git push origin feature-name
+```
+
+5. Open a Pull Request.
+
+---
+
+## Future Enhancements
+
+- AI-powered sustainability recommendations
+- Carbon footprint calculator
+- Community discussion forum
+- Mobile application
+- Real-time environmental analytics
+
+---
+
+## Authors
+
+**Venkat Reddy**
+
+GitHub: https://github.com/Venkatreddy71
+
+**Harsha Vardhan**
+
+Github: https://github.com/harsha12886
+
+**Chidara Sahasra**
+
+Github: https://github.com/chidarasahasra
+
+If you found this project helpful, please consider giving it a ⭐ on GitHub.
+
+Together, we can build a greener future.
