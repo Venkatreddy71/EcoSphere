@@ -1,32 +1,43 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 class AIService {
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    this.model = 'llama-3.3-70b-versatile';
+  }
+
+  getGroq() {
+    return new Groq({
+      apiKey: process.env.GROQ_API_KEY || 'dummy_key'
+    });
   }
 
   async getAdvice(prompt, context = []) {
     try {
-      const chat = this.model.startChat({
-        history: context.map(msg => ({
-          role: msg.role === 'ai' ? 'model' : 'user',
-          parts: [{ text: msg.content }],
-        })),
-        generationConfig: {
-          maxOutputTokens: 1000,
+      const messages = [
+        {
+          role: 'system',
+          content: 'You are an expert ESG (Environmental, Social, and Governance) advisor for an enterprise platform called EcoSphere. Provide concise, actionable, and professional advice.'
         },
+        ...context.map(msg => ({
+          role: msg.role === 'ai' || msg.role === 'model' ? 'assistant' : 'user',
+          content: msg.content
+        })),
+        {
+          role: 'user',
+          content: prompt
+        }
+      ];
+
+      const completion = await this.getGroq().chat.completions.create({
+        messages,
+        model: this.model,
+        max_tokens: 1000
       });
 
-      const systemPrompt = `You are an expert ESG (Environmental, Social, and Governance) advisor for an enterprise platform called EcoSphere. Provide concise, actionable, and professional advice. 
-User query: ${prompt}`;
-
-      const result = await chat.sendMessage(systemPrompt);
-      const response = await result.response;
-      return response.text();
+      return completion.choices[0]?.message?.content || "No advice generated.";
     } catch (error) {
-      console.error('AI Service Error:', error);
-      return "I'm currently unable to process your request. Please ensure the API key is configured correctly.";
+      console.error('Groq AI Service Error:', error);
+      return "I'm currently unable to process your request. Please ensure your GROQ_API_KEY is configured correctly.";
     }
   }
 
@@ -37,11 +48,16 @@ User query: ${prompt}`;
       Active Compliance Issues: ${contextData.issues}
       Active Goals: ${contextData.goals}
       Provide 3 highly actionable, specific recommendations to improve their ESG score. Format as a bulleted list.`;
-      
-      const result = await this.model.generateContent(prompt);
-      return (await result.response).text();
+
+      const completion = await this.getGroq().chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: this.model,
+        max_tokens: 800
+      });
+
+      return completion.choices[0]?.message?.content || "Unable to generate recommendations.";
     } catch (error) {
-      console.error('AI Service Error:', error);
+      console.error('Groq AI Service Error:', error);
       return "Unable to generate recommendations at this time.";
     }
   }
@@ -52,11 +68,16 @@ User query: ${prompt}`;
       Emissions: ${contextData.emissions} co2e
       Active Compliance Issues: ${contextData.issues}
       Provide a concise risk analysis summary highlighting potential regulatory, financial, and reputational risks.`;
-      
-      const result = await this.model.generateContent(prompt);
-      return (await result.response).text();
+
+      const completion = await this.getGroq().chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: this.model,
+        max_tokens: 800
+      });
+
+      return completion.choices[0]?.message?.content || "Unable to generate risk analysis.";
     } catch (error) {
-      console.error('AI Service Error:', error);
+      console.error('Groq AI Service Error:', error);
       return "Unable to generate risk analysis at this time.";
     }
   }
@@ -65,11 +86,16 @@ User query: ${prompt}`;
     try {
       const prompt = `Based on this historical emissions data: ${JSON.stringify(historicalData)}. 
       Forecast the emissions for the next quarter. Provide a brief explanation of the trend.`;
-      
-      const result = await this.model.generateContent(prompt);
-      return (await result.response).text();
+
+      const completion = await this.getGroq().chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: this.model,
+        max_tokens: 800
+      });
+
+      return completion.choices[0]?.message?.content || "Unable to generate forecast.";
     } catch (error) {
-      console.error('AI Service Error:', error);
+      console.error('Groq AI Service Error:', error);
       return "Unable to generate forecast at this time.";
     }
   }

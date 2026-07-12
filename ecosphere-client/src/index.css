@@ -1561,3 +1561,174 @@ input:checked + .slider:before {
   border-radius: 4px;
 }
 
+/* Floating AI Advisor Bubble */
+.floating-ai-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-environmental) 0%, var(--color-governance) 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4), 0 0 0 4px rgba(16, 185, 129, 0.1);
+  z-index: 9999;
+  transition: transform 0.2s, box-shadow 0.2s;
+  color: white;
+  font-size: 24px;
+}
+.floating-ai-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5), 0 0 0 6px rgba(16, 185, 129, 0.2);
+}
+
+/* AI Chat Drawer / Sidebar */
+.ai-drawer {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid var(--border-color);
+  z-index: 10000;
+  transition: right 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+}
+.ai-drawer.open {
+  right: 0;
+}
+.ai-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.ai-drawer-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.ai-drawer-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+}
+.ai-drawer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ai-action-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: center;
+}
+.ai-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-environmental);
+}
+.ai-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-right: 4px;
+}
+.ai-message {
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 85%;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap; /* This preserves newlines from the AI markdown */
+}
+.ai-message.user {
+  background-color: var(--color-environmental);
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+.ai-message.bot {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+  border: 1px solid var(--border-color);
+}
+.ai-chat-input-wrapper {
+  display: flex;
+  gap: 8px;
+}
+.ai-chat-input {
+  flex: 1;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  outline: none;
+  font-size: 13px;
+}
+.ai-chat-input:focus {
+  border-color: var(--color-environmental);
+}
+.ai-chat-send {
+  background-color: var(--color-environmental);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Document AI Dropzone */
+.ocr-dropzone {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  margin-bottom: 20px;
+}
+.ocr-dropzone:hover {
+  border-color: var(--color-environmental);
+  background-color: rgba(16, 185, 129, 0.02);
+}
+.ocr-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+.ocr-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+

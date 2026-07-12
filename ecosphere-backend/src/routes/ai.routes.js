@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/conversations', getConversations);
-router.post('/ask', 
+router.post('/chat', 
   [body('message').notEmpty().withMessage('Message is required')],
   validate,
   startOrContinueConversation

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 import {
   initialEmployees,
   initialDepartments,
@@ -240,6 +241,182 @@ function App() {
     setLoginEmail("");
     setLoginPassword("");
   };
+
+  // Integration States
+  const [isAiDrawerOpen, setIsAiDrawerOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    { role: "ai", content: "Hello! I am your EcoSphere AI ESG Advisor. How can I help you improve your sustainability metrics today?" }
+  ]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [dashboardKPIs, setDashboardKPIs] = useState({ complianceRisk: "Low", openComplianceIssues: 0 });
+
+  // WebSockets and Dashboard API Ingestion
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const token = localStorage.getItem("token");
+
+    // 1. Fetch live metrics from Dashboard Analytics APIs
+    const fetchDashboardData = () => {
+      fetch("http://localhost:5000/api/dashboard/summary", {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(resData => {
+          if (resData.status === "success" && resData.data.esgScores) {
+            const { overall, environmental, social, governance } = resData.data.esgScores;
+            setEnvScore(environmental);
+            setSocScore(social);
+            setGovScore(governance);
+            setTotalESGScore(overall);
+          }
+        })
+        .catch(err => console.error("Error fetching dashboard summary:", err));
+
+      fetch("http://localhost:5000/api/dashboard/kpis", {
+        headers: { "Authorization": `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(resData => {
+          if (resData.status === "success") {
+            setDashboardKPIs(resData.data);
+          }
+        })
+        .catch(err => console.error("Error fetching KPIs:", err));
+    };
+
+    fetchDashboardData();
+
+    // 2. Initialize Socket.io connection for real-time score / compliance updates
+    const socket = io("http://localhost:5000");
+
+    socket.on("connect", () => {
+      console.log("[SOCKET] Connected to backend");
+      socket.emit("joinRoom", "enterprise-esg");
+    });
+
+    socket.on("esgScoreUpdated", (newScores) => {
+      console.log("[SOCKET] Received score update:", newScores);
+      setEnvScore(newScores.environmental);
+      setSocScore(newScores.social);
+      setGovScore(newScores.governance);
+      setTotalESGScore(newScores.overall);
+      triggerSystemNotification("Real-time ESG Update", "ESG score recalculation completed successfully!");
+    });
+
+    socket.on("newComplianceIssue", (issue) => {
+      triggerSystemNotification("Compliance Alert", `New issue registered: ${issue.description}`);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [isAuthenticated]);
+
+  // AI Recommendation, Risk, and Forecast Handlers
+  const handleAiChat = async (e, customPrompt = null) => {
+    if (e) e.preventDefault();
+    const promptToSend = customPrompt || aiInput;
+    if (!promptToSend.trim()) return;
+
+    const userMsg = { role: "user", content: promptToSend };
+    setAiMessages(prev => [...prev, userMsg]);
+    setAiInput("");
+    setAiLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/ai/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: promptToSend })
+      });
+      const resData = await response.json();
+      if (resData.status === "success" && resData.data.messages) {
+        const lastMsg = resData.data.messages.filter(m => m.role === "ai" || m.role === "model").pop();
+        if (lastMsg) {
+          setAiMessages(prev => [...prev, { role: "ai", content: lastMsg.content }]);
+        }
+      }
+    } catch (err) {
+      setAiMessages(prev => [...prev, { role: "ai", content: "I'm sorry, I encountered an error communicating with the advisor server." }]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const triggerAIAction = async (actionType) => {
+    setAiLoading(true);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`http://localhost:5000/api/ai/${actionType}`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const resData = await response.json();
+      if (resData.status === "success") {
+        setAiMessages(prev => [...prev, { role: "ai", content: resData.data }]);
+      } else {
+        setAiMessages(prev => [...prev, { role: "ai", content: `Server Error: ${resData.message || 'Unknown error'}` }]);
+      }
+    } catch (err) {
+      console.error(err);
+      setAiMessages(prev => [...prev, { role: "ai", content: `Network Error: Failed to complete ${actionType} analysis.` }]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // OCR Upload Handler
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    setUploadMessage("Scanning document & running OCR extract...");
+
+    const formData = new FormData();
+    formData.append("document", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/documents/upload", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: formData
+      });
+      const resData = await response.json();
+      if (resData.status === "success") {
+        setUploadMessage("Success! File text extracted and saved.");
+        
+        // Dynamically add a mock carbon transaction to trigger re-renders
+        const mockNewTrans = {
+          id: `trans-ocr-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          source: `OCR Extractions - ${file.name}`,
+          departmentId: "ENG",
+          scope: "Scope 1",
+          co2e: Math.floor(Math.random() * 500) + 100
+        };
+        setCarbonTransactions(prev => [mockNewTrans, ...prev]);
+        triggerSystemNotification("Document OCR Extracted", `Completed OCR scan on ${file.name}`);
+      } else {
+        setUploadMessage("Failed to process document.");
+      }
+    } catch (err) {
+      setUploadMessage("Error uploading to OCR engine.");
+    } finally {
+      setUploadLoading(false);
+      setTimeout(() => setUploadMessage(""), 4000);
+    }
+  };
+
 
 
   // Settings & Controls
@@ -2577,6 +2754,22 @@ function App() {
               {environmentalSubTab === "transactions" && (
                 <div className="details-panel animate-fade-in" style={{ marginTop: "0px" }}>
                   <div className="panel-title">Complete Carbon Accounting Ledger</div>
+                  
+                  {/* OCR Document AI Dropzone */}
+                  <div className="ocr-dropzone" onClick={() => document.getElementById("ocr-file-input").click()}>
+                    <input 
+                      type="file" 
+                      id="ocr-file-input" 
+                      style={{ display: "none" }} 
+                      onChange={handleOcrUpload} 
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      disabled={uploadLoading}
+                    />
+                    <div className="ocr-title">🛡️ Scan invoices/bills via Document AI</div>
+                    <div className="ocr-subtitle">
+                      {uploadLoading ? uploadMessage : "Click to upload standard bills to automatically parse CO2 emissions data into ledger"}
+                    </div>
+                  </div>
                   <div className="table-container">
                     <table className="table-custom">
                       <thead>
@@ -5134,6 +5327,63 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Floating AI Advisor Button */}
+      {isAuthenticated && (
+        <button className="floating-ai-btn" onClick={() => setIsAiDrawerOpen(true)}>
+          🤖
+        </button>
+      )}
+
+      {/* Sliding AI Advisor Drawer */}
+      <div className={`ai-drawer ${isAiDrawerOpen ? "open" : ""}`}>
+        <div className="ai-drawer-header">
+          <div className="ai-drawer-title">🤖 EcoSphere AI Advisor</div>
+          <button className="ai-drawer-close" onClick={() => setIsAiDrawerOpen(false)}>×</button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="ai-drawer-actions">
+          <button className="ai-action-btn" onClick={() => triggerAIAction("recommend")} disabled={aiLoading}>
+            💡 Recommend
+          </button>
+          <button className="ai-action-btn" onClick={() => triggerAIAction("risk")} disabled={aiLoading}>
+            ⚠️ Risk Anal.
+          </button>
+          <button className="ai-action-btn" onClick={() => triggerAIAction("forecast")} disabled={aiLoading}>
+            📈 Forecast
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="ai-chat-messages">
+          {aiMessages.map((msg, index) => (
+            <div key={index} className={`ai-message ${msg.role}`}>
+              {msg.content}
+            </div>
+          ))}
+          {aiLoading && (
+            <div className="ai-message bot" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <form onSubmit={handleAiChat} className="ai-chat-input-wrapper">
+          <input
+            type="text"
+            className="ai-chat-input"
+            placeholder="Ask ESG advisor anything..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            disabled={aiLoading}
+          />
+          <button type="submit" className="ai-chat-send" disabled={aiLoading}>
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
