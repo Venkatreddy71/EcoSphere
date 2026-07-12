@@ -12,5 +12,16 @@ services:
     volumes:
       - ecosphere_pg_data:/var/lib/postgresql/data
 
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/ecosphere?schema=public
+      - JWT_SECRET=supersecret123
+      - PORT=5000
+    depends_on:
+      - db
+
 volumes:
   ecosphere_pg_data:

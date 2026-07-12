@@ -6,6 +6,8 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import apiRouter from './src/routes/api.router.js';
 import { errorHandler, notFoundHandler } from './src/middleware/error.middleware.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpecs from './src/config/swagger.js';
 
 const app = express();
 
@@ -33,6 +35,9 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api', apiRouter);
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 // Error Handling
 app.use(notFoundHandler);

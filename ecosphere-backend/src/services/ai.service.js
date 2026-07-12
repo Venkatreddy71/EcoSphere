@@ -29,6 +29,50 @@ User query: ${prompt}`;
       return "I'm currently unable to process your request. Please ensure the API key is configured correctly.";
     }
   }
+
+  async getRecommendation(contextData) {
+    try {
+      const prompt = `Based on the following ESG context for an enterprise:
+      Emissions: ${contextData.emissions} co2e
+      Active Compliance Issues: ${contextData.issues}
+      Active Goals: ${contextData.goals}
+      Provide 3 highly actionable, specific recommendations to improve their ESG score. Format as a bulleted list.`;
+      
+      const result = await this.model.generateContent(prompt);
+      return (await result.response).text();
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      return "Unable to generate recommendations at this time.";
+    }
+  }
+
+  async getRiskAnalysis(contextData) {
+    try {
+      const prompt = `Based on the following ESG data:
+      Emissions: ${contextData.emissions} co2e
+      Active Compliance Issues: ${contextData.issues}
+      Provide a concise risk analysis summary highlighting potential regulatory, financial, and reputational risks.`;
+      
+      const result = await this.model.generateContent(prompt);
+      return (await result.response).text();
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      return "Unable to generate risk analysis at this time.";
+    }
+  }
+
+  async getForecast(historicalData) {
+    try {
+      const prompt = `Based on this historical emissions data: ${JSON.stringify(historicalData)}. 
+      Forecast the emissions for the next quarter. Provide a brief explanation of the trend.`;
+      
+      const result = await this.model.generateContent(prompt);
+      return (await result.response).text();
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      return "Unable to generate forecast at this time.";
+    }
+  }
 }
 
 export default new AIService();

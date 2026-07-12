@@ -7,6 +7,8 @@ const importData = async () => {
   try {
     console.log('Clearing database...');
     // Delete in reverse order of dependencies
+    await prisma.auditLog.deleteMany();
+    await prisma.document.deleteMany();
     await prisma.aIMessage.deleteMany();
     await prisma.aIConversation.deleteMany();
     await prisma.report.deleteMany();

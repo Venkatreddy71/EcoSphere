@@ -74,3 +74,39 @@ export const startOrContinueConversation = async (req, res, next) => {
     res.json({ status: 'success', data: updatedConversation });
   } catch (error) { next(error); }
 };
+
+const getContextData = async () => {
+  const transactions = await prisma.carbonTransaction.findMany({ where: { isDeleted: false } });
+  const totalEmissions = transactions.reduce((acc, curr) => acc + curr.co2e, 0);
+  const issues = await prisma.complianceIssue.count({ where: { status: 'Open', isDeleted: false } });
+  const goals = await prisma.goal.count({ where: { status: 'On Track', isDeleted: false } });
+  return { emissions: totalEmissions, issues, goals };
+};
+
+export const recommend = async (req, res, next) => {
+  try {
+    const contextData = await getContextData();
+    const result = await aiService.getRecommendation(contextData);
+    res.json({ status: 'success', data: result });
+  } catch (error) { next(error); }
+};
+
+export const risk = async (req, res, next) => {
+  try {
+    const contextData = await getContextData();
+    const result = await aiService.getRiskAnalysis(contextData);
+    res.json({ status: 'success', data: result });
+  } catch (error) { next(error); }
+};
+
+export const forecast = async (req, res, next) => {
+  try {
+    const transactions = await prisma.carbonTransaction.findMany({ 
+      where: { isDeleted: false },
+      select: { timestamp: true, co2e: true },
+      orderBy: { timestamp: 'asc' }
+    });
+    const result = await aiService.getForecast(transactions);
+    res.json({ status: 'success', data: result });
+  } catch (error) { next(error); }
+};
